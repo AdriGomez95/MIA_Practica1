@@ -301,7 +301,6 @@ CREATE TABLE "empleado" (
   "empleado_activo" varchar(255) COLLATE "pg_catalog"."default",
   "usuario" varchar(255) COLLATE "pg_catalog"."default",
   "password" varchar(255) COLLATE "pg_catalog"."default",
-  "encargado" varchar(255) COLLATE "pg_catalog"."default",
   "id_tienda" int8 NOT NULL,
   "apellido_empleado" varchar(255) COLLATE "pg_catalog"."default"
 )
@@ -390,13 +389,14 @@ COMMIT;
 DROP TABLE IF EXISTS "renta";
 CREATE TABLE "renta" (
   "id_renta" int8 NOT NULL DEFAULT nextval('id_renta'::regclass),
-  "renta_inicio" int2,
-  "renta_final" int2,
-  "total" varchar(255) COLLATE "pg_catalog"."default",
-  "fecha_pago" varchar(255) COLLATE "pg_catalog"."default",
+  "renta_inicio" timestamp,
+  "renta_final" timestamp,
+  "total" int8,
+  "fecha_pago" timestamp,
   "id_cliente" int8 NOT NULL,
   "id_tienda" int8 NOT NULL,
-  "id_empleado" int8 NOT NULL
+  "id_empleado" int8 NOT NULL,
+  "id_pelicula" int8 NOT NULL
 )
 ;
 
@@ -413,7 +413,8 @@ DROP TABLE IF EXISTS "tienda";
 CREATE TABLE "tienda" (
   "id_tienda" int8 NOT NULL DEFAULT nextval('id_tienda'::regclass),
   "nombre_tienda" varchar(255) COLLATE "pg_catalog"."default",
-  "id_direccion" int8 NOT NULL
+  "id_direccion" int8 NOT NULL,
+  "nombre_encargado" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 

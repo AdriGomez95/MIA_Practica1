@@ -71,18 +71,21 @@ def cargar_db():
         TABLA_pais(cliente_pais)
         TABLA_ciudad(cliente_c_postal,cliente_ciudad,cliente_pais)
         TABLA_direccion(cliente_direccion,cliente_ciudad)
-        #TABLA_cliente(cliente_nombre,cliente_correo,cliente_activo,cliente_f_registro,cliente_tienda_fav)
+        TABLA_cliente(cliente_nombre,cliente_correo,cliente_activo,cliente_f_registro,cliente_tienda_fav)
+        TABLA_cliente_direccion(cliente_nombre,cliente_direccion)
 
         #empleado
         TABLA_pais(empleado_pais)
         TABLA_ciudad(empleado_c_postal,empleado_ciudad,empleado_pais)
         TABLA_direccion(empleado_direccion,empleado_ciudad)
+        TABLA_empleado(empleado_nombre,empleado_correo,empleado_activo,empleado_usuario,empleado_contrasenia,empleado_tienda)
+        TABLA_empleado_direccion(empleado_nombre,empleado_direccion)
 
         #tienda
         TABLA_pais(tienda_pais)
         TABLA_ciudad(tienda_c_postal,tienda_ciudad,tienda_pais)
         TABLA_direccion(tienda_direccion,tienda_ciudad)
-        TABLA_tienda(tienda_nombre,tienda_direccion)
+        TABLA_tienda(tienda_nombre,tienda_direccion,empleado_nombre)
 
         #pelicula
         TABLA_idioma(pelicula_lenguaje)
@@ -92,6 +95,7 @@ def cargar_db():
         TABLA_peli_idioma(pelicula_nombre,pelicula_lenguaje)
         TABLA_peli_categoria(pelicula_categoria,pelicula_nombre)
         TABLA_peli_actor(pelicula_actor,pelicula_nombre)
+        TABLA_renta(fecha_rentado,fecha_retorno,monto_pago,fecha_pago,cliente_nombre,tienda_nombre,empleado_nombre,pelicula_nombre)
 
     print("base de datos cargada")
     return {'data': "base de datos terminada"} 
@@ -184,14 +188,14 @@ def TABLA_direccion(direccion,ciudad):
         cur.execute(f"INSERT INTO direccion (direccion,id_ciudad) VALUES('{direccion}','{idd_ciudad[0][0]}')")
         conn.commit() 
 
-def TABLA_tienda(tienda,direccion):
+def TABLA_tienda(tienda,direccion,empleado):
     cur.execute(f"SELECT * FROM tienda WHERE nombre_tienda='{tienda}'")
     #si el dato no existe es 0
     dato_existe = len(cur.fetchall())
     if dato_existe == 0 and tienda != '-':
         cur.execute(f"SELECT * FROM direccion WHERE direccion='{direccion}'")
         idd_direccion= cur.fetchall()
-        cur.execute(f"INSERT INTO tienda (nombre_tienda,id_direccion) VALUES('{tienda}','{idd_direccion[0][0]}')")
+        cur.execute(f"INSERT INTO tienda (nombre_tienda,id_direccion,nombre_encargado) VALUES('{tienda}','{idd_direccion[0][0]}','{empleado}')")
         conn.commit() 
 
 def TABLA_peli_categoria(categoria2,pelicula2):
@@ -221,19 +225,93 @@ def TABLA_peli_idioma(pelicula,idioma):
             conn.commit() 
 
 def TABLA_peli_actor(actor,pelicula):
-    cur.execute(f"SELECT * FROM actor WHERE nombre_actor='{actor}'")
-    idd_actor = cur.fetchall()
-    cur.execute(f"SELECT * FROM pelicula WHERE nombre_pelicula='{pelicula}'")
-    idd_pelicula = cur.fetchall()
-    if len(idd_actor) != 0 and len(idd_pelicula) != 0:
-        cur.execute(f"SELECT * FROM actor_pelicula WHERE id_actor='{idd_actor[0][0]}' AND id_pelicula='{idd_pelicula[0][0]}'")
+    if actor != '-':
+        apellido = actor.split(" ")
+        cur.execute(f"SELECT * FROM pelicula WHERE nombre_pelicula='{pelicula}'")
+        idd_pelicula = cur.fetchall()
+        cur.execute(f"SELECT * FROM actor WHERE nombre_actor='{apellido[0]}'")
+        idd_actor = cur.fetchall()
+        if len(idd_pelicula) != 0 and len(idd_actor) != 0:
+            cur.execute(f"SELECT * FROM actor_pelicula WHERE id_pelicula='{idd_pelicula[0][0]}' AND id_actor='{idd_actor[0][0]}'")
+            #si el dato no existe es 0
+            dato_existe = len(cur.fetchall())
+            if dato_existe == 0:
+                cur.execute(f"INSERT INTO actor_pelicula (id_actor,id_pelicula) VALUES('{idd_actor[0][0]}','{idd_pelicula[0][0]}')")
+                conn.commit() 
+
+def TABLA_cliente(cliente,correo,cliente_activo,fecha,tienda):
+    if cliente != '-':
+        apellido = cliente.split(" ")
+        cur.execute(f"SELECT * FROM cliente WHERE nombre_cliente='{apellido[0]}'")
         #si el dato no existe es 0
         dato_existe = len(cur.fetchall())
         if dato_existe == 0:
-            cur.execute(f"INSERT INTO actor_pelicula (id_actor,id_pelicula) VALUES('{idd_actor[0][0]}','{idd_pelicula[0][0]}')")
-            conn.commit() 
-    
+            cur.execute(f"SELECT * FROM tienda WHERE nombre_tienda='{tienda}'")
+            idd_tienda = cur.fetchall()
+            if len(idd_tienda) != 0:
 
+                cur.execute(f"INSERT INTO cliente (nombre_cliente,correo,cliente_activo,fecha_registro,id_tienda,apellido_cliente)  VALUES('{apellido[0]}','{correo}','{cliente_activo}','{fecha}','{idd_tienda[0][0]}','{apellido[1]}')")
+                conn.commit
+
+def TABLA_cliente_direccion(cliente,direccion):
+    if cliente != '-':
+        apellido = cliente.split(" ")
+        cur.execute(f"SELECT * FROM cliente WHERE nombre_cliente='{apellido[0]}'")
+        idd_cliente = cur.fetchall()
+        cur.execute(f"SELECT * FROM direccion WHERE direccion='{direccion}'")
+        idd_direccion = cur.fetchall()
+        if len(idd_cliente) != 0 and len(idd_direccion) != 0:
+            cur.execute(f"SELECT * FROM direccion_cliente WHERE id_cliente='{idd_cliente[0][0]}' AND id_direccion='{idd_direccion[0][0]}'")
+            #si el dato no existe es 0
+            dato_existe = len(cur.fetchall())
+            if dato_existe == 0:
+                cur.execute(f"INSERT INTO direccion_cliente (id_cliente,id_direccion) VALUES('{idd_cliente[0][0]}','{idd_direccion[0][0]}')")
+                conn.commit() 
+
+def TABLA_empleado(empleado,correo,empleado_activo,usuario,password,tienda):
+    if empleado != '-':
+        apellido = empleado.split(" ")
+        cur.execute(f"SELECT * FROM empleado WHERE nombre_empleado='{apellido[0]}'")
+        #si el dato no existe es 0
+        dato_existe = len(cur.fetchall())
+        if dato_existe == 0:
+            cur.execute(f"SELECT * FROM tienda WHERE nombre_tienda='{tienda}'")
+            idd_tienda = cur.fetchall()
+            if len(idd_tienda) != 0:
+
+                cur.execute(f"INSERT INTO empleado (nombre_empleado, correo, empleado_activo, usuario, password, id_tienda, apellido_empleado)  VALUES('{apellido[0]}','{correo}','{empleado_activo}','{usuario}','{password}','{idd_tienda[0][0]}','{apellido[1]}')")
+                conn.commit
+
+def TABLA_empleado_direccion(empleado,direccion):
+    if empleado != '-':
+        apellido = empleado.split(" ")
+        cur.execute(f"SELECT * FROM empleado WHERE nombre_empleado='{apellido[0]}'")
+        idd_empleado = cur.fetchall()
+        cur.execute(f"SELECT * FROM direccion WHERE direccion='{direccion}'")
+        idd_direccion = cur.fetchall()
+        if len(idd_empleado) != 0 and len(idd_direccion) != 0:
+            cur.execute(f"SELECT * FROM direccion_empleado WHERE id_empleado='{idd_empleado[0][0]}' AND id_direccion='{idd_direccion[0][0]}'")
+            #si el dato no existe es 0
+            dato_existe = len(cur.fetchall())
+            if dato_existe == 0:
+                cur.execute(f"INSERT INTO direccion_empleado (id_empleado,id_direccion) VALUES('{idd_empleado[0][0]}','{idd_direccion[0][0]}')")
+                conn.commit() 
+
+def TABLA_renta(renta_inicio,renta_final,total,fecha,id_cliente,id_tienda,id_empleado,id_pelicula):
+    if renta_inicio!='-' and renta_final!='-' and total!='-' and fecha!='-' and id_cliente!='-' and id_tienda!='-' and id_empleado!='-' and id_pelicula!='-':
+        apellidoc = id_cliente.split(" ")
+        apellidoe = id_empleado.split(" ")
+        cur.execute(f"SELECT * FROM cliente WHERE nombre_cliente='{apellidoc[0]}'")
+        idd_cliente = cur.fetchall()
+        cur.execute(f"SELECT * FROM tienda WHERE nombre_tienda='{id_tienda}'")
+        idd_tienda = cur.fetchall()
+        cur.execute(f"SELECT * FROM empleado WHERE nombre_empleado='{apellidoe[0]}'")
+        idd_empleado = cur.fetchall()
+        cur.execute(f"SELECT * FROM pelicula WHERE nombre_pelicula='{id_pelicula}'")
+        idd_pelicula = cur.fetchall()
+        if len(idd_cliente) != 0 and len(idd_tienda) != 0 and len(idd_empleado) != 0 and len(idd_pelicula) != 0:
+                cur.execute(f"INSERT INTO renta (renta_inicio,renta_final,total,fecha_pago,id_cliente,id_tienda,id_empleado,id_pelicula) VALUES('{renta_inicio}','{renta_final}','{total}','{fecha}','{idd_cliente[0][0]}','{idd_tienda[0][0]}','{idd_empleado[0][0]}','{idd_pelicula[0][0]}')")
+                conn.commit() 
 
 
 
